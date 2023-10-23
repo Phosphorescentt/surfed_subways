@@ -5,14 +5,38 @@ use std::{f32::consts::PI, time::Duration};
 
 const SPEED: f32 = 10.0;
 
+#[derive(PartialEq, Copy, Clone)]
+enum Lane {
+    LEFT,
+    MIDDLE,
+    RIGHT,
+}
+
 #[derive(Component)]
 struct Scroller;
+
+#[derive(Component)]
+struct LaneObject {
+    lane: Lane,
+}
+
+#[derive(Component)]
+struct PlayerMoveCooldownTime {
+    timer: Timer,
+}
+
+#[derive(Component)]
+struct Player;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(WorldInspectorPlugin::default())
-        .add_systems(Startup, (setup_track, setup_camera, setup_light))
+        .add_systems(
+            Startup,
+            (setup_track, setup_camera, setup_light, setup_player),
+        )
+        .add_systems(PreUpdate, move_player)
         .add_systems(FixedUpdate, (move_scrollers, cull_stuff_behind_camera))
         .add_systems(
             Update,
@@ -86,6 +110,26 @@ fn setup_track(
         .insert(Name::new("Right Lane"));
 }
 
+fn setup_player(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(shape::Box::new(0.25, 1.5, 0.75).into()),
+            material: materials.add(Color::PURPLE.into()),
+            transform: Transform::from_xyz(-15.0, 1.0, 0.0),
+            ..default()
+        })
+        .insert(Player)
+        .insert(LaneObject { lane: Lane::MIDDLE })
+        .insert(PlayerMoveCooldownTime {
+            timer: Timer::new(Duration::from_millis(100), TimerMode::Once),
+        })
+        .insert(Name::new("Player"));
+}
+
 fn spawn_track_lines(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -145,4 +189,47 @@ fn spawn_coins(
         })
         .insert(Scroller)
         .insert(Name::new("Coin"));
+}
+
+fn move_player(
+    mut player_query: Query<
+        (&mut Transform, &mut LaneObject, &mut PlayerMoveCooldownTime),
+        With<Player>,
+    >,
+    keyboard_input: Res<Input<KeyCode>>,
+    time: Res<Time>,
+) {
+    let (mut player_transform, mut player_lane_obj, mut move_cooldown_timer) =
+        player_query.single_mut();
+
+    move_cooldown_timer.timer.tick(time.delta());
+
+    if move_cooldown_timer.timer.finished() {
+        match player_lane_obj.lane {
+            Lane::LEFT => {
+                if keyboard_input.pressed(KeyCode::D) {
+                    player_transform.translation.z = 0.0;
+                    player_lane_obj.lane = Lane::MIDDLE;
+                }
+            }
+            Lane::MIDDLE => {
+                if keyboard_input.pressed(KeyCode::A) {
+                    player_transform.translation.z = -1.0;
+                    player_lane_obj.lane = Lane::LEFT;
+                }
+                if keyboard_input.pressed(KeyCode::D) {
+                    player_transform.translation.z = 1.0;
+                    player_lane_obj.lane = Lane::RIGHT;
+                }
+            }
+            Lane::RIGHT => {
+                if keyboard_input.pressed(KeyCode::A) {
+                    player_transform.translation.z = 0.0;
+                    player_lane_obj.lane = Lane::MIDDLE;
+                }
+            }
+        };
+
+        move_cooldown_timer.timer.reset();
+    }
 }
