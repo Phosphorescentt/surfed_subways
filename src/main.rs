@@ -16,6 +16,9 @@ enum Lane {
 struct Scroller;
 
 #[derive(Component)]
+struct Coin;
+
+#[derive(Component)]
 struct LaneObject {
     lane: Lane,
 }
@@ -43,6 +46,7 @@ fn main() {
             (
                 spawn_track_lines.run_if(on_timer(Duration::from_secs(1))),
                 spawn_coins.run_if(on_timer(Duration::from_millis(500))),
+                collect_coins,
             ),
         )
         .run();
@@ -188,6 +192,7 @@ fn spawn_coins(
             ..default()
         })
         .insert(Scroller)
+        .insert(Coin)
         .insert(Name::new("Coin"));
 }
 
@@ -231,5 +236,22 @@ fn move_player(
         };
 
         move_cooldown_timer.timer.reset();
+    }
+}
+
+fn collect_coins(
+    mut commands: Commands,
+    mut player_query: Query<&Transform, With<Player>>,
+    mut coin_query: Query<(&Transform, Entity), With<Coin>>,
+) {
+    let player_transform = player_query.single_mut();
+
+    for (coin_transform, entity) in coin_query.iter_mut() {
+        let distance = coin_transform
+            .translation
+            .distance(player_transform.translation);
+        if distance < 1.0 {
+            commands.entity(entity).despawn_recursive()
+        }
     }
 }
