@@ -11,6 +11,9 @@ struct Score {
     score: i64,
 }
 
+#[derive(Component)]
+struct ScoreText;
+
 #[derive(PartialEq, Copy, Clone)]
 enum Lane {
     LEFT,
@@ -43,7 +46,13 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::default())
         .add_systems(
             Startup,
-            (setup_track, setup_camera, setup_light, setup_player),
+            (
+                setup_track,
+                setup_camera,
+                setup_light,
+                setup_player,
+                setup_ui,
+            ),
         )
         .add_systems(PreUpdate, move_player)
         .add_systems(FixedUpdate, (move_scrollers, cull_stuff_behind_camera))
@@ -53,6 +62,7 @@ fn main() {
                 spawn_track_lines.run_if(on_timer(Duration::from_secs(1))),
                 spawn_coins.run_if(on_timer(Duration::from_millis(500))),
                 collect_coins,
+                update_ui,
             ),
         )
         .insert_resource(Score::default())
@@ -263,6 +273,37 @@ fn collect_coins(
             score_res.coins += 1;
         }
     }
+}
 
-    println!("coins: {}", score_res.coins);
+fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::SpaceBetween,
+                ..default()
+            },
+            transform: Transform::default(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn(TextBundle::from_section(
+                    "Text Example",
+                    TextStyle {
+                        font: asset_server.load("fonts/Roboto-Regular.ttf"),
+                        font_size: 30.0,
+                        color: Color::WHITE,
+                    },
+                ))
+                .insert(ScoreText);
+        })
+        .insert(Name::new("UI"));
+}
+
+fn update_ui(mut query: Query<&mut Text, With<ScoreText>>, score_res: Res<Score>) {
+    for mut text in &mut query {
+        text.sections[0].value = format!("Coins: {}, Score: {}", score_res.coins, score_res.score);
+    }
 }
