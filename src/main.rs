@@ -5,6 +5,12 @@ use std::{f32::consts::PI, time::Duration};
 
 const SPEED: f32 = 10.0;
 
+#[derive(Resource, Default)]
+struct Score {
+    coins: i64,
+    score: i64,
+}
+
 #[derive(PartialEq, Copy, Clone)]
 enum Lane {
     LEFT,
@@ -49,6 +55,7 @@ fn main() {
                 collect_coins,
             ),
         )
+        .insert_resource(Score::default())
         .run();
 }
 
@@ -243,6 +250,7 @@ fn collect_coins(
     mut commands: Commands,
     mut player_query: Query<&Transform, With<Player>>,
     mut coin_query: Query<(&Transform, Entity), With<Coin>>,
+    mut score_res: ResMut<Score>,
 ) {
     let player_transform = player_query.single_mut();
 
@@ -251,7 +259,10 @@ fn collect_coins(
             .translation
             .distance(player_transform.translation);
         if distance < 1.0 {
-            commands.entity(entity).despawn_recursive()
+            commands.entity(entity).despawn_recursive();
+            score_res.coins += 1;
         }
     }
+
+    println!("coins: {}", score_res.coins);
 }
