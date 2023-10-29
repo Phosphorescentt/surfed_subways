@@ -54,11 +54,11 @@ fn main() {
                 setup_ui,
             ),
         )
-        .add_systems(PreUpdate, move_player)
         .add_systems(FixedUpdate, (move_scrollers, cull_stuff_behind_camera))
         .add_systems(
             Update,
             (
+                move_player,
                 spawn_track_lines.run_if(on_timer(Duration::from_secs(1))),
                 spawn_coins.run_if(on_timer(Duration::from_millis(500))),
                 collect_coins,
@@ -229,30 +229,32 @@ fn move_player(
     if move_cooldown_timer.timer.finished() {
         match player_lane_obj.lane {
             Lane::LEFT => {
-                if keyboard_input.pressed(KeyCode::D) {
+                if keyboard_input.just_pressed(KeyCode::D) {
                     player_transform.translation.z = 0.0;
                     player_lane_obj.lane = Lane::MIDDLE;
+                    move_cooldown_timer.timer.reset();
                 }
             }
             Lane::MIDDLE => {
-                if keyboard_input.pressed(KeyCode::A) {
+                if keyboard_input.just_pressed(KeyCode::A) {
                     player_transform.translation.z = -1.0;
                     player_lane_obj.lane = Lane::LEFT;
+                    move_cooldown_timer.timer.reset();
                 }
-                if keyboard_input.pressed(KeyCode::D) {
+                if keyboard_input.just_pressed(KeyCode::D) {
                     player_transform.translation.z = 1.0;
                     player_lane_obj.lane = Lane::RIGHT;
+                    move_cooldown_timer.timer.reset();
                 }
             }
             Lane::RIGHT => {
-                if keyboard_input.pressed(KeyCode::A) {
+                if keyboard_input.just_pressed(KeyCode::A) {
                     player_transform.translation.z = 0.0;
                     player_lane_obj.lane = Lane::MIDDLE;
+                    move_cooldown_timer.timer.reset();
                 }
             }
         };
-
-        move_cooldown_timer.timer.reset();
     }
 }
 
