@@ -1,0 +1,14 @@
+[metadata]
+# Uniquely defines the pattern inside the game
+unique_name = "pattern_1"
+# Used to display pattern information in the game
+name = "Pattern 1"
+version = "0.0.1"
+
+[pattern_data]
+# Which patterns this pattern can lead from given as `unique_name`s of other patterns
+leads_from = ["abc"]
+# Which patterns this pattern can lead to given as `unique_name`s of other patterns
+leads_to = ["def"]
+# The actual pattern data
+pattern = [["c", "c", ""]]
