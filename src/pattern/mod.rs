@@ -1,4 +1,5 @@
 use bevy::{
+    asset::LoadedFolder,
     prelude::*,
     reflect::{TypePath, TypeUuid},
     utils::HashMap,
@@ -20,13 +21,16 @@ struct PatternStore {
     hashmap: HashMap<String, Pattern>,
 }
 
-// #[derive(Resource)]
-// struct PatternHandle(Handle<Pattern>);
+#[derive(Resource)]
+struct FolderHandle(Handle<LoadedFolder>);
 
 #[derive(Resource)]
-struct PatternHandles(Vec<HandleUntyped>);
+struct PatternHandle(Handle<Pattern>);
 
-#[derive(serde::Deserialize, TypeUuid, TypePath, Debug)]
+#[derive(Resource)]
+struct PatternHandles<HandleUntyped>(Vec<HandleUntyped>);
+
+#[derive(Asset, serde::Deserialize, TypeUuid, TypePath, Debug)]
 #[uuid = "413be529-bfeb-41b3-9db0-4b8b380a2c46"]
 struct Pattern {
     metadata: PatternMetadata,
@@ -90,9 +94,11 @@ fn load_patterns(mut commands: Commands, server: Res<AssetServer>) {
     info!("Loading patterns...");
     // let pattern = PatternHandle(server.load("patterns/one.pattern.toml"));
     // commands.insert_resource(pattern);
-    if let Ok(handles) = server.load_folder("patterns") {
-        commands.insert_resource(PatternHandles(handles));
-    }
+    let handle = server.load_folder("patterns");
+    commands.insert_resource(FolderHandle(handle));
+    // if let Ok(handles) = server.load_folder("patterns") {
+    //     commands.insert_resource(PatternHandles(handles));
+    // }
 }
 
 fn validate_patterns(mut pattern_assets: Res<Assets<Pattern>>) {

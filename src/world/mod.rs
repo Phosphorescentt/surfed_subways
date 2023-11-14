@@ -101,10 +101,10 @@ fn setup_light(mut commands: Commands) {
     });
 }
 
-fn move_scrollers(mut query: Query<&mut Transform, With<Scroller>>, time: Res<FixedTime>) {
+fn move_scrollers(mut query: Query<&mut Transform, With<Scroller>>, time: Res<Time<Fixed>>) {
     for mut scroller_transform in query.iter_mut() {
         scroller_transform.translation +=
-            Vec3::new(-1.0, 0.0, 0.0) * SPEED * time.period.as_secs_f32();
+            Vec3::new(-1.0, 0.0, 0.0) * SPEED * time.delta().as_secs_f32();
     }
 }
 
